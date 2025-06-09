@@ -1,0 +1,80 @@
+<!-- src/app/features/dashboard/components/pool/pool.component.html -->
+<div 
+  class="bg-white border-2 rounded-xl p-6"
+  [ngClass]="{
+    'border-blue-300': isProductionPool,
+    'border-gray-300': !isProductionPool
+  }"
+  (dragover)="$event.preventDefault()"
+  (drop)="onDropOnPool($event)"
+>
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-bold text-gray-800">{{ pool.name }}</h3>
+    <div class="flex items-center gap-4">
+      <div class="flex gap-2 text-xs">
+        <span class="flex items-center gap-1" *ngIf="getStatusCount('active') > 0">
+          <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+          {{ getStatusCount('active') }}
+        </span>
+        <span class="flex items-center gap-1" *ngIf="getStatusCount('absent') > 0">
+          <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+          {{ getStatusCount('absent') }}
+        </span>
+        <span class="flex items-center gap-1" *ngIf="getStatusCount('busy') > 0">
+          <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+          {{ getStatusCount('busy') }}
+        </span>
+      </div>
+      <span 
+        class="text-sm font-medium"
+        [ngClass]="{
+          'text-red-600': isOverCapacity,
+          'text-gray-600': !isOverCapacity
+        }"
+      >
+        {{ poolCapacityText }}
+      </span>
+    </div>
+  </div>
+
+  <div 
+    class="min-h-[200px] p-4 bg-gray-50 rounded-lg"
+    [ngClass]="{
+      'border-2 border-dashed border-gray-200': pool.employees.length === 0
+    }"
+  >
+    <div 
+      class="grid gap-4"
+      [ngClass]="{
+        'grid-cols-3': isProductionPool,
+        'grid-cols-4': !isProductionPool
+      }"
+    >
+      <app-employee-card
+        *ngFor="let employee of pool.employees; let i = index"
+        [employee]="employee"
+        [isDragging]="isDraggingFromThisPool(i)"
+        [isDragOver]="dragOverIndex === i"
+        (dragstart)="onDragStart($event, i)"
+        (dragend)="onDragEnd()"
+        (dragover)="onDragOver($event, i)"
+        (drop)="onDrop($event, i)"
+        (dragleave)="onDragLeave()"
+      ></app-employee-card>
+
+      <div 
+        *ngFor="let p of getPlaceholders()"
+        class="aspect-[3/2] border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center text-gray-300 text-3xl"
+      >
+        <span>+</span>
+      </div>
+    </div>
+
+    <div 
+      *ngIf="pool.employees.length === 0"
+      class="flex items-center justify-center h-full text-gray-400"
+    >
+      <p>將員工拖放到這裡</p>
+    </div>
+  </div>
+</div>

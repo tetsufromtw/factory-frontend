@@ -2,108 +2,130 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Employee } from '../../shared/models/employee.model';
-import { EmployeeCardComponent } from './components/employee-card/employee-card.component';
+import { Pool } from '../../shared/models/pool.model';
+import { PoolComponent, DragDropData } from './components/pool/pool.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, EmployeeCardComponent],
+  imports: [CommonModule, PoolComponent],
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent {
-  employees: Employee[] = [
+  pools: Pool[] = [
     {
-      id: 1,
-      name: '千葉さん',
-      position: 'エンジニア',
-      emoji: '👤',
-      status: 'active'
+      id: 'production-1',
+      name: '產線 A',
+      type: 'production',
+      maxCapacity: 6,
+      employees: [
+        {
+          id: 1,
+          name: '林さん',
+          position: 'エンジニア',
+          emoji: '👨‍💻',
+          status: 'active'
+        },
+        {
+          id: 2,
+          name: '陳さん',
+          position: 'デザイナー',
+          emoji: '👩‍🎨',
+          status: 'active'
+        }
+      ]
     },
     {
-      id: 2,
-      name: '梁さん',
-      position: 'デザイナー',
-      emoji: '👤',
-      status: 'active'
+      id: 'production-2',
+      name: '產線 B',
+      type: 'production',
+      maxCapacity: 6,
+      employees: [
+        {
+          id: 3,
+          name: '王さん',
+          position: 'マネージャー',
+          emoji: '👨‍💼',
+          status: 'busy'
+        }
+      ]
     },
     {
-      id: 3,
-      name: '鈴木さん',
-      position: 'マネージャー',
-      emoji: '👤',
-      status: 'busy'
-    },
-    {
-      id: 4,
-      name: '武田さん',
-      position: 'エンジニア',
-      emoji: '👤',
-      status: 'absent'
-    },
-    {
-      id: 5,
-      name: '田中さん',
-      position: 'アナリスト',
-      emoji: '👤',
-      status: 'active'
+      id: 'unassigned',
+      name: '未配置人員',
+      type: 'unassigned',
+      employees: [
+        {
+          id: 4,
+          name: '張さん',
+          position: 'エンジニア',
+          emoji: '👩‍💻',
+          status: 'absent'
+        },
+        {
+          id: 5,
+          name: '李さん',
+          position: 'アナリスト',
+          emoji: '👨‍🔬',
+          status: 'active'
+        },
+        {
+          id: 6,
+          name: '黃さん',
+          position: 'エンジニア',
+          emoji: '👨‍💻',
+          status: 'active'
+        },
+        {
+          id: 7,
+          name: '劉さん',
+          position: 'デザイナー',
+          emoji: '👩‍🎨',
+          status: 'active'
+        }
+      ]
     }
   ];
 
-  draggedIndex: number | null = null;
-  dragOverIndex: number | null = null;
+  draggedData: { poolId: string; index: number } | null = null;
 
-  getStatusText(status: string): string {
-    const statusMap: {[key: string]: string} = {
-      'active': '出勤',
-      'absent': '欠勤',
-      'busy': '取込み中'
-    };
-    return statusMap[status] || '';
+  get totalEmployees(): number {
+    return this.pools.reduce((sum, pool) => sum + pool.employees.length, 0);
   }
 
-  getPlaceholders(): number[] {
-    const totalSlots = 9;
-    const emptySlots = totalSlots - this.employees.length;
-    return Array(emptySlots).fill(0);
+  get activeEmployees(): number {
+    return this.pools.reduce((sum, pool) => 
+      sum + pool.employees.filter(e => e.status === 'active').length, 0
+    );
   }
 
-  onDragStart(event: DragEvent, index: number): void {
-    this.draggedIndex = index;
-    event.dataTransfer!.effectAllowed = 'move';
-    event.dataTransfer!.setData('text/html', '');
+  onDragStart(data: { poolId: string; index: number }): void {
+    this.draggedData = data;
   }
 
   onDragEnd(): void {
-    this.draggedIndex = null;
-    this.dragOverIndex = null;
+    this.draggedData = null;
   }
 
-  onDragOver(event: DragEvent, index: number): void {
-    event.preventDefault();
-    event.dataTransfer!.dropEffect = 'move';
-    this.dragOverIndex = index;
-  }
+  onDrop(data: DragDropData): void {
+    const fromPool = this.pools.find(p => p.id === data.fromPoolId);
+    const toPool = this.pools.find(p => p.id === data.toPoolId);
 
-  onDragLeave(): void {
-    this.dragOverIndex = null;
-  }
+    if (!fromPool || !toPool) return;
 
-  onDrop(event: DragEvent, dropIndex: number): void {
-    event.preventDefault();
-    
-    if (this.draggedIndex !== null && this.draggedIndex !== dropIndex) {
-      const draggedEmployee = this.employees[this.draggedIndex];
-      const newEmployees = [...this.employees];
-      
-      newEmployees.splice(this.draggedIndex, 1);
-      
-      const adjustedDropIndex = dropIndex > this.draggedIndex ? dropIndex - 1 : dropIndex;
-      newEmployees.splice(adjustedDropIndex, 0, draggedEmployee);
-      
-      this.employees = newEmployees;
+    const employee = fromPool.employees[data.employeeIndex];
+    if (!employee) return;
+
+    fromPool.employees.splice(data.employeeIndex, 1);
+
+    if (data.fromPoolId === data.toPoolId) {
+      const adjustedIndex = data.targetIndex > data.employeeIndex ? 
+        data.targetIndex - 1 : data.targetIndex;
+      toPool.employees.splice(adjustedIndex, 0, employee);
+    } else {
+      toPool.employees.splice(data.targetIndex, 0, employee);
     }
-    
-    this.draggedIndex = null;
-    this.dragOverIndex = null;
+
+    this.pools = [...this.pools];
   }
 }
