@@ -1,32 +1,51 @@
 <!-- src/app/features/dashboard/dashboard.component.html -->
 <div class="min-h-screen bg-gray-100 font-sans p-8">
-  <div class="max-w-7xl mx-auto">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="flex items-center justify-center min-h-screen">
+    <div class="text-xl text-gray-600">Loading...</div>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading" class="max-w-7xl mx-auto">
+    <!-- Error Message -->
+    <div *ngIf="error" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+      {{ error }}
+      <button (click)="dismissError()" class="ml-4 text-sm underline">
+        Dismiss
+      </button>
+    </div>
+
+    <!-- Header -->
     <header class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">人員配置系統</h1>
-      <p class="text-sm text-gray-600 tracking-wider">拖放員工到不同產線</p>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">配置システム</h1>
+      <p class="text-sm text-gray-600 tracking-wider">従業員を異なるラインにドラッグ＆ドロップ</p>
     </header>
 
+    <!-- Production Pools Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      <app-pool
+      <app-pool 
         *ngFor="let pool of pools.slice(0, 2)"
         [pool]="pool"
         [draggedData]="draggedData"
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd()"
-        (drop)="onDrop($event)"
-      ></app-pool>
+        (drop)="onDrop($event)">
+      </app-pool>
     </div>
 
+    <!-- Unassigned Pool -->
     <div class="mb-6">
-      <app-pool
+      <app-pool 
+        *ngIf="pools[2]"
         [pool]="pools[2]"
         [draggedData]="draggedData"
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd()"
-        (drop)="onDrop($event)"
-      ></app-pool>
+        (drop)="onDrop($event)">
+      </app-pool>
     </div>
 
+    <!-- Stats Bar -->
     <div class="bg-white rounded-lg p-4 shadow-sm">
       <div class="flex justify-center items-center gap-8 text-sm text-gray-700">
         <div class="flex gap-6">
@@ -40,12 +59,12 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
-            <span>取込み中</span>
+            <span>取り込み中</span>
           </div>
         </div>
         <div class="w-px h-5 bg-gray-300"></div>
         <div class="flex gap-4">
-          <span>總人數: {{ totalEmployees }}</span>
+          <span>総人数: {{ totalEmployees }}</span>
           <span>出勤中: {{ activeEmployees }}</span>
         </div>
       </div>
